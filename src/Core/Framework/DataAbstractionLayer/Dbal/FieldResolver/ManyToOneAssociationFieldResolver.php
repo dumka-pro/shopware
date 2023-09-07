@@ -109,7 +109,7 @@ class ManyToOneAssociationFieldResolver extends AbstractFieldResolver
             return $inherited;
         }
 
-        if ($fk instanceof FkField && $field->is(Required::class)) {
+        if ($fk instanceof FkField) {
             return sprintf(
                 'IFNULL(%s, %s)',
                 EntityDefinitionQueryHelper::escape($root) . '.' . EntityDefinitionQueryHelper::escape($field->getStorageName()),
