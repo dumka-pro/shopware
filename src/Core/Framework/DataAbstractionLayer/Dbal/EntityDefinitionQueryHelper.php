@@ -554,9 +554,12 @@ class EntityDefinitionQueryHelper
             }
 
             $query->andWhere(sprintf(
-                '%s.%s IN (:ids)',
+                '%s.%s IN (%s)',
                 EntityDefinitionQueryHelper::escape($definition->getEntityName()),
-                EntityDefinitionQueryHelper::escape($primaryKeyField->getStorageName())
+                EntityDefinitionQueryHelper::escape($primaryKeyField->getStorageName()),
+                implode(', ', array_map(static function ($id) {
+                    return '0x' . bin2hex($id);
+                }, $primaryKeys))
             ));
 
             $query->setParameter('ids', $primaryKeys, ArrayParameterType::STRING);
