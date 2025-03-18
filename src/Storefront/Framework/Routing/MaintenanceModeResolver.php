@@ -99,6 +99,14 @@ class MaintenanceModeResolver
             return false;
         }
 
+        if (strpos($master->getUri(), 'cscart/api') !== false) {
+            return false;
+        }
+
+        if (strpos($master->getUri(), 'csv_import') !== false) {
+            return false;
+        }
+
         return (bool) $master->attributes->get(SalesChannelRequest::ATTRIBUTE_SALES_CHANNEL_MAINTENANCE);
     }
 
