@@ -215,6 +215,19 @@ class SqlQueryParser
             return $result;
         }
 
+        if ($field instanceof IdField || $field instanceof FkField) {
+            $value = array_values($query->getValue());
+            $value = array_filter($value, static fn (bool|float|int|string $id): bool => Uuid::isValid((string) $id));
+            $value = array_map(static fn (bool|float|int|string $id): string => '0x' . ((string) $id), $value);
+            $value = implode(', ', $value);
+
+            if ($value) {
+                $result->addWhere($select . ' IN (' . $value . ')');
+
+                return $result;
+            }
+        }
+
         $result->addWhere($select . ' IN (:' . $key . ')');
 
         $value = array_values($query->getValue());
