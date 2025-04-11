@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\Adapter\Asset;
 
+use Shopware\Core\Framework\Plugin\Util\AssetService;
 use Symfony\Component\Asset\Package;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\Asset\UrlPackage;
@@ -22,10 +23,13 @@ class AssetPackageService
 
     public function addAssetPackage(string $bundleName, string $bundlePath): void
     {
-        $path = $this->package->getUrl('/bundles/' . mb_strtolower($bundleName));
+        /** @see AssetService::getTargetDirectory() */
+        $targetPath = '/bundles/' . preg_replace('/bundle$/', '', mb_strtolower($bundleName));
+
+        $path = $this->package->getUrl($targetPath);
         $this->packages->addPackage(
             '@' . $bundleName,
-            new UrlPackage($path, new PrefixVersionStrategy('/bundles/' . mb_strtolower($bundleName), $this->versionStrategy))
+            new UrlPackage($path, new PrefixVersionStrategy($targetPath, $this->versionStrategy))
         );
     }
 }

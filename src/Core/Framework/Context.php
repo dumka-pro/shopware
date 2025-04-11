@@ -138,11 +138,11 @@ class Context extends Struct
     }
 
     /**
-     * @param callable(Context): mixed $callback
+     * @param \Closure(Context): mixed $callback
      *
      * @return mixed the return value of the provided callback function
      */
-    public function scope(string $scope, callable $callback)
+    public function scope(string $scope, \Closure $callback)
     {
         $currentScope = $this->getScope();
         $this->scope = $scope;
@@ -203,11 +203,11 @@ class Context extends Struct
     }
 
     /**
-     * @param callable(Context): mixed $function
+     * @param \Closure(Context): mixed $function
      *
      * @return mixed
      */
-    public function enableInheritance(callable $function)
+    public function enableInheritance(\Closure $function)
     {
         $previous = $this->considerInheritance;
         $this->considerInheritance = true;
@@ -218,11 +218,11 @@ class Context extends Struct
     }
 
     /**
-     * @param callable(Context): mixed $function
+     * @param \Closure(Context): mixed $function
      *
      * @return mixed
      */
-    public function disableInheritance(callable $function)
+    public function disableInheritance(\Closure $function)
     {
         $previous = $this->considerInheritance;
         $this->considerInheritance = false;
