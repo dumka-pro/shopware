@@ -41,7 +41,8 @@ class NavigationPageLoader implements NavigationPageLoaderInterface
             ->load($navigationId, $request, $context)
             ->getCategory();
 
-        if (!$category->getActive()) {
+        // TODO: Add service like AvailableFilter to replace it
+        if (!$category->getActive() && !$context->getExtension('entityPreview')) {
             throw new CategoryNotFoundException($category->getId());
         }
 
