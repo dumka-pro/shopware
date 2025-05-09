@@ -1,7 +1,6 @@
 {
     "name": "shopware/platform",
     "description": "The Shopware e-commerce core",
-    "version": "6.5.3.900",
     "type": "library",
     "keywords": [
         "framework",
