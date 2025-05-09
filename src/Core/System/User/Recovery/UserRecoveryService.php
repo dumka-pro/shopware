@@ -7,10 +7,12 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopware\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
 use Shopware\Core\System\User\UserEntity;
@@ -30,7 +32,7 @@ class UserRecoveryService
         private readonly EntityRepository $userRepo,
         private readonly RouterInterface $router,
         private readonly EventDispatcherInterface $dispatcher,
-        private readonly SalesChannelContextService $salesChannelContextService,
+        private readonly SalesChannelContextServiceInterface $salesChannelContextService,
         private readonly EntityRepository $salesChannelRepository,
     ) {
     }
@@ -174,7 +176,17 @@ class UserRecoveryService
 
     private function getSalesChannelId(Context $context): string
     {
-        $id = $this->salesChannelRepository->searchIds(new Criteria(), $context)->firstId();
+        $criteria = new Criteria();
+        $criteria->addFilter(new NotFilter(NotFilter::CONNECTION_AND, [
+            new EqualsFilter('hreflangDefaultDomainId', null),
+        ]));
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
+
+        $id = $this->salesChannelRepository->searchIds($criteria, $context)->firstId();
+
+        if ($id === null) {
+            $id = $this->salesChannelRepository->searchIds(new Criteria(), $context)->firstId();
+        }
 
         if ($id === null) {
             throw new \RuntimeException('No sales channel found');
