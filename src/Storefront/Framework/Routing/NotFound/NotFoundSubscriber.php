@@ -142,6 +142,10 @@ class NotFoundSubscriber implements EventSubscriberInterface
     {
         $key = self::buildName($salesChannelId, $domainId, $languageId) . md5($this->generator->getSalesChannelContextHash($context));
 
+        // TODO: Consider moving into a separate plugin
+        // Used to show appropriate account status for users logged in and out at 404 pages
+        $key .= $context->getCustomerId() ? '1' : '0';
+
         $event = new NotFoundPageCacheKeyEvent($key, $request, $context);
 
         $this->eventDispatcher->dispatch($event);
@@ -173,7 +177,7 @@ class NotFoundSubscriber implements EventSubscriberInterface
         $context = $this->contextService->get(
             new SalesChannelContextServiceParameters(
                 $salesChannelId,
-                Uuid::randomHex(),
+                $request->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN) ?? Uuid::randomHex(),
                 $request->headers->get(PlatformRequest::HEADER_LANGUAGE_ID),
                 $request->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_CURRENCY_ID),
                 $request->attributes->get(SalesChannelRequest::ATTRIBUTE_DOMAIN_ID)
