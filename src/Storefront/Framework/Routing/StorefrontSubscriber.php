@@ -105,6 +105,17 @@ class StorefrontSubscriber implements EventSubscriberInterface
 
         $session = $master->getSession();
 
+        if (
+            !$session->isStarted()
+            && !$master->cookies->has('session-')
+            && (
+                $master->getMethod() === 'GET'
+                || str_contains($master->getRequestUri(), '/StoreSelect/getWidget')
+            )
+        ) {
+            return;
+        }
+
         if (!$session->isStarted()) {
             $session->setName('session-');
             $session->start();
