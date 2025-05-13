@@ -5,14 +5,15 @@ namespace Shopware\Core\Checkout\Customer\Subscriber;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Checkout\Order\OrderDefinition;
+use Shopware\Core\Checkout\Order\OrderEvents;
 use Shopware\Core\Checkout\Order\OrderStates;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\StateMachine\Event\StateMachineTransitionEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -31,12 +32,12 @@ class CustomerMetaFieldSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            StateMachineTransitionEvent::class => 'fillCustomerMetaDataFields',
+            OrderEvents::ORDER_WRITTEN_EVENT => 'fillCustomerMetaDataFields',
             PreWriteValidationEvent::class => 'deleteOrder',
         ];
     }
 
-    public function fillCustomerMetaDataFields(StateMachineTransitionEvent $event): void
+    public function fillCustomerMetaDataFields(EntityWrittenEvent $event): void
     {
         if ($event->getContext()->getVersionId() !== Defaults::LIVE_VERSION) {
             return;
@@ -45,12 +46,12 @@ class CustomerMetaFieldSubscriber implements EventSubscriberInterface
         if ($event->getEntityName() !== 'order') {
             return;
         }
-
-        if ($event->getToPlace()->getTechnicalName() !== OrderStates::STATE_COMPLETED && $event->getFromPlace()->getTechnicalName() !== OrderStates::STATE_COMPLETED) {
-            return;
+        $orderIds = [];
+        foreach ($event->getWriteResults() as $writeResult) {
+            $orderIds[] = $writeResult->getPrimaryKey();
         }
 
-        $this->updateCustomer([$event->getEntityId()]);
+        $this->updateCustomer($orderIds);
     }
 
     public function deleteOrder(PreWriteValidationEvent $event): void
@@ -74,7 +75,7 @@ class CustomerMetaFieldSubscriber implements EventSubscriberInterface
     /**
      * @param array<string> $orderIds
      */
-    private function updateCustomer(array $orderIds, bool $isDelete = false): void
+    private function updateCustomer(array $orderIds): void
     {
         if (empty($orderIds)) {
             return;
@@ -93,18 +94,11 @@ class CustomerMetaFieldSubscriber implements EventSubscriberInterface
         $parameters = [
             'customerIds' => Uuid::fromHexToBytesList($customerIds),
             'version' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION),
-            'state' => OrderStates::STATE_COMPLETED,
+            'state' => OrderStates::STATE_CANCELLED,
         ];
         $types = [
             'customerIds' => ArrayParameterType::STRING,
         ];
-
-        $whereOrder = '';
-        if ($isDelete) {
-            $whereOrder = 'AND `order`.id NOT IN (:exceptOrderIds)';
-            $parameters['exceptOrderIds'] = Uuid::fromHexToBytesList($orderIds);
-            $types['exceptOrderIds'] = ArrayParameterType::STRING;
-        }
 
         $select = '
             SELECT `order_customer`.customer_id as id,
@@ -118,11 +112,10 @@ class CustomerMetaFieldSubscriber implements EventSubscriberInterface
                 ON `order`.id = `order_customer`.order_id
                 AND `order`.version_id = `order_customer`.order_version_id
                 AND `order`.version_id = :version
-                ' . $whereOrder . '
 
             INNER JOIN `state_machine_state`
                 ON `state_machine_state`.id = `order`.state_id
-                AND `state_machine_state`.technical_name = :state
+                AND `state_machine_state`.technical_name != :state
 
             WHERE `order_customer`.customer_id IN (:customerIds)
             GROUP BY `order_customer`.customer_id
