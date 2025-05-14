@@ -3,4 +3,7 @@ composer.lock
 phpunit.xml
 Resources/app/storefront/build/artifacts
 Resources/app/storefront/vendor/*
+!Resources/app/storefront/vendor/bootstrap
+!Resources/app/storefront/vendor/flatpickr
 !Resources/app/storefront/vendor/Inter-3.5
+!Resources/app/storefront/vendor/tiny-slider
