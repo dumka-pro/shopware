@@ -81,6 +81,8 @@ typings/
 
 app/storefront/dist/*
 !app/storefront/dist/assets
+!app/storefront/dist/js
+!app/storefront/dist/storefront
 
 app/storefront/test/app
 
