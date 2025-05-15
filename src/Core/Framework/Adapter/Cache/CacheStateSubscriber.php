@@ -69,15 +69,18 @@ class CacheStateSubscriber implements EventSubscriberInterface
         /** @var SalesChannelContext $context */
         $context = $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
 
-        $cart = $this->cartService->getCart($context->getToken(), $context);
+        // Dumka.pro: This flag is totally unnecessary
+        // $cart = $this->cartService->getCart($context->getToken(), $context);
 
         $context->removeState(self::STATE_LOGGED_IN);
 
+        /*
         $context->removeState(self::STATE_CART_FILLED);
 
         if ($cart->getLineItems()->count() > 0) {
             $context->addState(self::STATE_CART_FILLED);
         }
+        */
 
         if ($context->getCustomer() !== null) {
             $context->addState(self::STATE_LOGGED_IN);

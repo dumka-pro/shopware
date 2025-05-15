@@ -102,7 +102,9 @@ class CacheResponseSubscriber implements EventSubscriberInterface
             $this->setCurrencyCookie($request, $response);
         }
 
-        $cart = $this->cartService->getCart($context->getToken(), $context);
+        // Dumka.pro: We don't use cart for anything but unnecessary flag calculation anyway
+        // $cart = $this->cartService->getCart($context->getToken(), $context);
+        $cart = new Cart('');
 
         $states = $this->updateSystemState($cart, $context, $request, $response);
 
@@ -270,7 +272,8 @@ class CacheResponseSubscriber implements EventSubscriberInterface
 
         $states = $this->switchState($states, self::STATE_LOGGED_IN, $context->getCustomer() !== null);
 
-        $states = $this->switchState($states, self::STATE_CART_FILLED, $cart->getLineItems()->count() > 0);
+        // Dumka.pro: This flag is totally unnecessary
+        // $states = $this->switchState($states, self::STATE_CART_FILLED, $cart->getLineItems()->count() > 0);
 
         return array_keys($states);
     }
