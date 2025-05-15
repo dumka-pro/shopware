@@ -9,6 +9,9 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Util\Random;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenAfterSaveEvent;
+use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenAfterDeleteEvent;
+use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenAfterRevokeAllEvent;
 use Shopware\Core\System\SalesChannel\Event\SalesChannelContextTokenChangeEvent;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -44,17 +47,21 @@ class SalesChannelContextPersister
 
         unset($parameters['token']);
 
+        $data = [
+            'token' => $token,
+            'payload' => json_encode($parameters, \JSON_THROW_ON_ERROR),
+            'salesChannelId' => $salesChannelId ? Uuid::fromHexToBytes($salesChannelId) : null,
+            'customerId' => $customerId ? Uuid::fromHexToBytes($customerId) : null,
+            'updatedAt' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+        ];
+
         $this->connection->executeStatement(
             'REPLACE INTO sales_channel_api_context (`token`, `payload`, `sales_channel_id`, `customer_id`, `updated_at`)
                 VALUES (:token, :payload, :salesChannelId, :customerId, :updatedAt)',
-            [
-                'token' => $token,
-                'payload' => json_encode($parameters, \JSON_THROW_ON_ERROR),
-                'salesChannelId' => $salesChannelId ? Uuid::fromHexToBytes($salesChannelId) : null,
-                'customerId' => $customerId ? Uuid::fromHexToBytes($customerId) : null,
-                'updatedAt' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-            ]
+            $data
         );
+
+        $this->eventDispatcher->dispatch(new SalesChannelContextTokenAfterSaveEvent($data));
     }
 
     public function delete(string $token, string $salesChannelId, ?string $customerId = null): void
@@ -65,6 +72,8 @@ class SalesChannelContextPersister
                 'token' => $token,
             ]
         );
+
+        $this->eventDispatcher->dispatch(new SalesChannelContextTokenAfterDeleteEvent($token, $salesChannelId, $customerId));
     }
 
     public function replace(string $oldToken, SalesChannelContext $context): string
@@ -182,7 +191,11 @@ class SalesChannelContextPersister
                 ->setParameter('preserveTokens', $preserveTokens, ArrayParameterType::STRING);
         }
 
+        $entries = $this->getTokensForCustomer($customerId, $preserveTokens);
+
         $qb->executeStatement();
+
+        $this->eventDispatcher->dispatch(new SalesChannelContextTokenAfterRevokeAllEvent($entries));
     }
 
     /**
@@ -202,5 +215,23 @@ class SalesChannelContextPersister
         }
 
         return null;
+    }
+
+    private function getTokensForCustomer(string $customerId, array $preserveTokens): array
+    {
+        $qb = $this->connection->createQueryBuilder();
+        $qb
+            ->select('token', 'payload', 'sales_channel_id', 'customer_id')
+            ->from('sales_channel_api_context')
+            ->where('customer_id = :customerId')
+            ->setParameter('customerId', Uuid::fromHexToBytes($customerId));
+
+        if (!empty($preserveTokens)) {
+            $qb
+                ->andWhere($qb->expr()->notIn('token', ':preserveTokens'))
+                ->setParameter('preserveTokens', $preserveTokens, ArrayParameterType::STRING);
+        }
+
+        return $qb->executeQuery()->fetchAllAssociative();
     }
 }
