@@ -86,4 +86,4 @@ app/storefront/dist/*
 
 app/storefront/test/app
 
-public/
+!public/
