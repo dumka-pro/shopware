@@ -83,7 +83,7 @@ class RecalculationService
         $orderData = $this->orderConverter->convertToOrder($recalculatedCart, $salesChannelContext, $conversionContext);
         $orderData['id'] = $order->getId();
         $orderData['stateId'] = $order->getStateId();
-        if ($order->getDeliveries()?->first()?->getStateId()) {
+        if ($order->getDeliveries()?->first()?->getStateId() && isset($orderData['deliveries'][0])) {
             $orderData['deliveries'][0]['stateId'] = $order->getDeliveries()->first()->getStateId();
         }
 
