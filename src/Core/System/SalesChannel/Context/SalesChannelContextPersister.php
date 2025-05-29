@@ -61,7 +61,7 @@ class SalesChannelContextPersister
             $data
         );
 
-        $this->eventDispatcher->dispatch(new SalesChannelContextTokenAfterSaveEvent($data));
+        $this->eventDispatcher->dispatch(new SalesChannelContextTokenAfterSaveEvent($token, $newParameters, $existing, $salesChannelId, $customerId));
     }
 
     public function delete(string $token, string $salesChannelId, ?string $customerId = null): void
@@ -195,7 +195,7 @@ class SalesChannelContextPersister
 
         $qb->executeStatement();
 
-        $this->eventDispatcher->dispatch(new SalesChannelContextTokenAfterRevokeAllEvent($entries));
+        $this->eventDispatcher->dispatch(new SalesChannelContextTokenAfterRevokeAllEvent($customerId, $entries));
     }
 
     /**
@@ -221,7 +221,7 @@ class SalesChannelContextPersister
     {
         $qb = $this->connection->createQueryBuilder();
         $qb
-            ->select('token', 'payload', 'sales_channel_id', 'customer_id')
+            ->select('token', 'payload', 'LOWER(HEX(sales_channel_id)) sales_channel_id', 'LOWER(HEX(customer_id)) customer_id')
             ->from('sales_channel_api_context')
             ->where('customer_id = :customerId')
             ->setParameter('customerId', Uuid::fromHexToBytes($customerId));

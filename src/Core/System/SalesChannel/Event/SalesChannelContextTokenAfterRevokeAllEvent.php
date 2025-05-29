@@ -2,8 +2,6 @@
 
 namespace Shopware\Core\System\SalesChannel\Event;
 
-use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Event\ShopwareSalesChannelEvent;
 use Shopware\Core\Framework\Log\Package;
 use Symfony\Contracts\EventDispatcher\Event;
 
@@ -11,13 +9,24 @@ use Symfony\Contracts\EventDispatcher\Event;
 class SalesChannelContextTokenAfterRevokeAllEvent extends Event
 {
     /**
+     * @var string|null
+     */
+    protected $customerId;
+
+    /**
      * @var array<array<string, mixed>>
      */
     protected $revokedTokens;
 
-    public function __construct(array $revokedTokens)
+    public function __construct(string $customerId, array $revokedTokens)
     {
+        $this->customerId = $customerId;
         $this->revokedTokens = $revokedTokens;
+    }
+
+    public function getCustomerId(): ?string
+    {
+        return $this->customerId;
     }
 
     /**
