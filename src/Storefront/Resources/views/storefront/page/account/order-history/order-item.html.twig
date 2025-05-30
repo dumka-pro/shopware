@@ -10,7 +10,9 @@
 {% block page_account_order_item_overview %}
     <div class="order-wrapper">
         <div class="order-item-header">
+                {# As we don't cancel transactions anymore, we need to add OPEN here to keep customers from hanging #}
                 {% set states = [
+                    ORDER_TRANSACTION_STATE_OPEN,
                     ORDER_TRANSACTION_STATE_FAILED,
                     ORDER_TRANSACTION_STATE_REMINDED,
                     ORDER_TRANSACTION_STATE_UNCONFIRMED,
