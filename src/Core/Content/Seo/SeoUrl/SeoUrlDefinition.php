@@ -10,6 +10,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
@@ -53,7 +54,7 @@ class SeoUrlDefinition extends EntityDefinition
 
             (new StringField('route_name', 'routeName', 50))->addFlags(new ApiAware(), new Required()),
             (new StringField('path_info', 'pathInfo', 750))->addFlags(new ApiAware(), new Required()),
-            (new StringField('seo_path_info', 'seoPathInfo', 750))->addFlags(new ApiAware(), new Required()),
+            (new StringField('seo_path_info', 'seoPathInfo', 750))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
             (new BoolField('is_canonical', 'isCanonical'))->addFlags(new ApiAware()),
             (new BoolField('is_modified', 'isModified'))->addFlags(new ApiAware()),
             (new BoolField('is_deleted', 'isDeleted'))->addFlags(new ApiAware()),
